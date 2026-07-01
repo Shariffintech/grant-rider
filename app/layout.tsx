@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Abena DMS Grant Helper",
+  title: "Granted",
   description: "A friendly grant finder and draft helper for Abena DMS."
 };
 

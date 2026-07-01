@@ -1,13 +1,13 @@
-# Grant Rider
+# Granted
 
-Grant Rider is a Python-only grant application workflow built around Google ADK 2.0
+Granted is a Python-only grant application workflow built around Google ADK 2.0
 graph workflows. AI extracts and drafts; deterministic Python rules score and route;
 the founder controls the source profile and every submission decision.
 
 ```text
 Founder Profile -> Extract -> Score -> Route -> Draft -> Human Review
 ```
-![Grant Rider Workflow](image.png)
+![Granted Workflow](image.png)
 
 
 ## Setup

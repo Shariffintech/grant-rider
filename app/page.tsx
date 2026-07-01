@@ -254,20 +254,20 @@ export default function Dashboard() {
     <main className="ops-shell">
       <section className="hero-band">
         <div>
-          <p className="eyebrow"><BookOpenCheck size={16} /> Abena DMS Grant Rider</p>
-          <h1>Grant helper for Abena DMS</h1>
+          <p className="eyebrow"><BookOpenCheck size={16} /> Granted</p>
+          <h1>Granted</h1>
           <p className="mission-copy">
             Use this like a simple checklist: find grants, choose the one that looks best, then
             let the helper make a first draft for you to review.
           </p>
-          <div className="simple-steps" aria-label="How to use Grant Rider">
+          <div className="simple-steps" aria-label="How to use Granted">
             <span>1. Find grants</span>
             <span>2. Pick one</span>
             <span>3. Review the draft</span>
           </div>
         </div>
         <div className="status-stack">
-          <StatusTile icon={Wifi} label="Grant helper" value="Ready" />
+          <StatusTile icon={Wifi} label="Granted" value="Ready" />
           <StatusTile icon={Gauge} label="Company profile" value={`${readiness}% ready`} />
           <StatusTile icon={LockKeyhole} label="Final step" value="You approve" />
         </div>
