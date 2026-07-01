@@ -1,0 +1,2 @@
+"""Human-reviewable grant drafting."""
+

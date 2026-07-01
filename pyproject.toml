@@ -1,0 +1,37 @@
+[project]
+name = "grant-rider"
+version = "0.1.0"
+description = "Google ADK 2.0 grant discovery, scoring, and drafting workflow"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "google-adk>=2.0,<3.0",
+  "google-genai>=1.0",
+  "pydantic>=2.7",
+  "pyyaml>=6.0",
+  "requests>=2.32",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+grant-rider = "grant_application_agent.main:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["grant_application_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+

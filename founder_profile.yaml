@@ -1,0 +1,33 @@
+name: Abena DMS
+founder_name: Sharif Tarver
+industry: Education Technology
+entity_type: for-profit
+focus_areas:
+  - special education
+  - AI workflow automation
+  - progress monitoring
+  - intervention fidelity
+  - early intervention
+  - MTSS (Multi-Tiered System of Supports)
+business_stage: pre-seed
+eligible_locations:
+  - Philadelphia
+  - Pennsylvania
+  - New Jersey
+  - United States
+  - Massachusetts
+  - Maryland
+target_customers:
+  - school districts
+  - early intervention providers
+  - special education teams
+funding_needs:
+  - product development
+  - pilot programs
+  - research and validation
+  - implementation support
+excluded_grants:
+  - nonprofit only
+  - outside education
+  - relocation required
+minimum_score_to_draft: 80

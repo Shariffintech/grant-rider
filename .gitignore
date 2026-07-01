@@ -1,0 +1,11 @@
+.env
+.venv/
+.firecrawl/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+outputs/
+node_modules/
+.next/
+.DS_Store
