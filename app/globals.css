@@ -1,16 +1,17 @@
 :root {
-  --bg: #07100d;
-  --panel: #0d1c18;
-  --panel-strong: #112822;
-  --line: #24443b;
-  --text: #edf8f3;
-  --muted: #93aaa2;
-  --green: #43f08c;
-  --amber: #ffc857;
-  --red: #ff6b6b;
-  --blue: #63d5ff;
-  --violet: #b7a2ff;
-  --shadow: 0 22px 80px rgba(0, 0, 0, 0.32);
+  --bg: #fbfaff;
+  --panel: #ffffff;
+  --panel-strong: #f4f1ff;
+  --line: #e4e0f4;
+  --text: #17152f;
+  --muted: #675f7a;
+  --green: #00b884;
+  --amber: #ff9f43;
+  --red: #ec3039;
+  --blue: #2f80ed;
+  --violet: #6c5ce7;
+  --violet-dark: #5f4fd4;
+  --shadow: 0 18px 55px rgba(88, 70, 180, 0.13);
 }
 
 * {
@@ -25,13 +26,11 @@ body {
   margin: 0;
   color: var(--text);
   background:
-    linear-gradient(rgba(67, 240, 140, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 213, 255, 0.035) 1px, transparent 1px),
-    radial-gradient(circle at 20% 0%, rgba(67, 240, 140, 0.14), transparent 34rem),
-    radial-gradient(circle at 90% 12%, rgba(99, 213, 255, 0.13), transparent 32rem),
+    radial-gradient(circle at 12% 0%, rgba(108, 92, 231, 0.13), transparent 34rem),
+    radial-gradient(circle at 88% 8%, rgba(0, 237, 151, 0.1), transparent 30rem),
+    linear-gradient(180deg, #fbfaff 0%, #f7f4ff 46%, #ffffff 100%),
     var(--bg);
-  background-size: 34px 34px, 34px 34px, auto, auto, auto;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, Arial, Helvetica, sans-serif;
   letter-spacing: 0;
 }
 
@@ -74,7 +73,7 @@ button {
 .eyebrow {
   gap: 8px;
   margin: 0 0 18px;
-  color: var(--green);
+  color: var(--violet);
   text-transform: uppercase;
   font-size: 0.78rem;
   font-weight: 800;
@@ -96,6 +95,23 @@ h1 {
   line-height: 1.7;
 }
 
+.simple-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.simple-steps span {
+  padding: 10px 14px;
+  color: var(--violet-dark);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(88, 70, 180, 0.08);
+}
+
 .status-stack,
 .intel-stats {
   display: grid;
@@ -107,7 +123,7 @@ h1 {
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--line);
-  background: rgba(13, 28, 24, 0.82);
+  background: var(--panel);
   border-radius: 8px;
 }
 
@@ -147,17 +163,17 @@ h1 {
 
 .station-panel {
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(17, 40, 34, 0.94), rgba(10, 23, 20, 0.94));
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: var(--shadow);
   border-radius: 8px;
   padding: 18px;
 }
 
 .discovery-command {
-  border-color: rgba(67, 240, 140, 0.42);
+  border-color: rgba(108, 92, 231, 0.25);
   background:
-    linear-gradient(135deg, rgba(67, 240, 140, 0.14), transparent 28%),
-    linear-gradient(180deg, rgba(17, 40, 34, 0.98), rgba(8, 19, 16, 0.98));
+    linear-gradient(135deg, rgba(108, 92, 231, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffffff, #fbfaff);
 }
 
 .discovery-header {
@@ -180,7 +196,7 @@ h1 {
 }
 
 .discovery-header strong {
-  color: var(--green);
+  color: var(--violet);
 }
 
 .discovery-actions,
@@ -209,15 +225,15 @@ h1 {
 }
 
 .discover-button {
-  color: #06100c;
-  border: 1px solid var(--green);
-  background: linear-gradient(90deg, var(--green), #9dffbe);
+  color: #ffffff;
+  border: 1px solid var(--violet);
+  background: linear-gradient(90deg, var(--violet), var(--violet-dark));
 }
 
 .apply-button {
-  color: #06100c;
+  color: #211301;
   border: 1px solid var(--amber);
-  background: linear-gradient(90deg, var(--amber), #ffe08f);
+  background: linear-gradient(90deg, #ffb15f, #ffd79a);
 }
 
 .inline-apply {
@@ -235,7 +251,7 @@ h1 {
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #06120e;
+  background: #ffffff;
 }
 
 .discovery-search input {
@@ -268,12 +284,12 @@ h1 {
   text-align: left;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(7, 18, 15, 0.88);
+  background: #ffffff;
 }
 
 .discovery-row.active {
-  border-color: var(--amber);
-  box-shadow: inset 0 0 0 1px rgba(255, 200, 87, 0.35);
+  border-color: var(--violet);
+  box-shadow: inset 0 0 0 1px rgba(108, 92, 231, 0.3);
 }
 
 .discovery-row span {
@@ -287,7 +303,7 @@ h1 {
 
 .discovery-row small,
 .selected-label {
-  color: var(--blue);
+  color: var(--violet);
   text-transform: uppercase;
   font-size: 0.72rem;
   font-weight: 900;
@@ -296,9 +312,9 @@ h1 {
 .selected-discovery {
   min-height: 260px;
   padding: 16px;
-  border: 1px solid rgba(255, 200, 87, 0.34);
+  border: 1px solid rgba(108, 92, 231, 0.24);
   border-radius: 8px;
-  background: #07120f;
+  background: #ffffff;
 }
 
 .selected-discovery h2 {
@@ -334,7 +350,7 @@ h1 {
 }
 
 .panel-title span {
-  color: var(--green);
+  color: var(--violet);
   font-size: 0.76rem;
   text-transform: uppercase;
   font-weight: 800;
@@ -351,7 +367,7 @@ input,
 textarea {
   width: 100%;
   color: var(--text);
-  background: #07120f;
+  background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 12px 13px;
@@ -360,8 +376,8 @@ textarea {
 
 input:focus,
 textarea:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(67, 240, 140, 0.12);
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.14);
 }
 
 textarea {
@@ -380,8 +396,8 @@ textarea {
 
 .primary-button {
   padding: 0 18px;
-  color: #06100c;
-  background: var(--green);
+  color: #ffffff;
+  background: var(--violet);
 }
 
 .secondary-button {
@@ -390,7 +406,7 @@ textarea {
   padding: 0 16px;
   color: var(--text);
   border-color: var(--line);
-  background: #10241f;
+  background: #ffffff;
 }
 
 button:disabled {
@@ -412,12 +428,12 @@ button:disabled {
   justify-content: center;
   gap: 8px;
   border: 1px solid var(--line);
-  background: #091712;
+  background: #ffffff;
   border-radius: 8px;
 }
 
 .pipe-node span {
-  color: var(--blue);
+  color: var(--violet);
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -431,12 +447,11 @@ button:disabled {
   gap: 10px;
   margin-top: 14px;
   padding: 0 12px;
-  color: var(--green);
-  border: 1px solid rgba(67, 240, 140, 0.28);
-  background: rgba(4, 12, 9, 0.88);
+  color: var(--violet-dark);
+  border: 1px solid rgba(108, 92, 231, 0.2);
+  background: #f7f4ff;
   border-radius: 6px;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
 }
 
 .score-orbit {
@@ -450,12 +465,12 @@ button:disabled {
   height: 172px;
   display: grid;
   place-items: center;
-  border: 2px solid var(--green);
+  border: 2px solid var(--violet);
   border-radius: 50%;
   background:
-    linear-gradient(90deg, transparent 49%, rgba(67, 240, 140, 0.22) 50%, transparent 51%),
-    linear-gradient(0deg, transparent 49%, rgba(99, 213, 255, 0.18) 50%, transparent 51%),
-    #06120e;
+    linear-gradient(90deg, transparent 49%, rgba(108, 92, 231, 0.12) 50%, transparent 51%),
+    linear-gradient(0deg, transparent 49%, rgba(108, 92, 231, 0.12) 50%, transparent 51%),
+    #ffffff;
 }
 
 .score-orbit span {
@@ -495,7 +510,7 @@ button:disabled {
 .meter-row div {
   height: 8px;
   overflow: hidden;
-  background: #07120f;
+  background: #f0ecff;
   border: 1px solid var(--line);
   border-radius: 99px;
 }
@@ -503,7 +518,7 @@ button:disabled {
 .meter-row i {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--green), var(--blue));
+  background: linear-gradient(90deg, var(--violet), var(--green));
 }
 
 .form-grid {
@@ -546,13 +561,13 @@ button:disabled {
   padding: 12px;
   color: var(--text);
   text-align: left;
-  background: #091712;
+  background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 8px;
 }
 
 .report-row.active {
-  border-color: var(--green);
+  border-color: var(--violet);
 }
 
 .report-row span {
@@ -563,7 +578,7 @@ button:disabled {
 }
 
 .report-row b {
-  color: var(--green);
+  color: var(--violet);
   text-align: right;
 }
 
@@ -579,7 +594,7 @@ button:disabled {
 }
 
 .intel-body a {
-  color: var(--blue);
+  color: var(--violet);
   overflow-wrap: anywhere;
 }
 
@@ -607,13 +622,13 @@ button:disabled {
   overflow: auto;
   margin: 16px 0 0;
   padding: 16px;
-  color: #d8fce8;
+  color: var(--text);
   white-space: pre-wrap;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #050c09;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 0.86rem;
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.95rem;
   line-height: 1.6;
 }
 

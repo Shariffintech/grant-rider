@@ -3,6 +3,7 @@
 import {
   Activity,
   Antenna,
+  BookOpenCheck,
   Bot,
   CheckCircle2,
   CircleGauge,
@@ -14,7 +15,6 @@ import {
   ListChecks,
   Loader2,
   LockKeyhole,
-  Network,
   Radar,
   Save,
   Search,
@@ -93,12 +93,12 @@ const emptyProfile: FounderProfile = {
 };
 
 const pipeline = [
-  { label: "Ingress", icon: Antenna },
-  { label: "Extract", icon: FileSearch },
-  { label: "Score", icon: CircleGauge },
-  { label: "Route", icon: GitBranch },
-  { label: "Draft", icon: ClipboardCheck },
-  { label: "Review", icon: ShieldCheck }
+  { label: "Read page", icon: Antenna },
+  { label: "Pull details", icon: FileSearch },
+  { label: "Check fit", icon: CircleGauge },
+  { label: "Pick path", icon: GitBranch },
+  { label: "Make draft", icon: ClipboardCheck },
+  { label: "You review", icon: ShieldCheck }
 ];
 
 export default function Dashboard() {
@@ -114,7 +114,7 @@ export default function Dashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [discoveryQuery, setDiscoveryQuery] = useState("");
   const [discoveryLimit, setDiscoveryLimit] = useState(5);
-  const [notice, setNotice] = useState("Standing by for grant target acquisition.");
+  const [notice, setNotice] = useState("Start by clicking Find Grants.");
 
   const readiness = useMemo(() => {
     const checks = [
@@ -164,7 +164,7 @@ export default function Dashboard() {
 
   async function saveProfile() {
     setIsSaving(true);
-    setNotice("Syncing founder profile to the backend control file.");
+    setNotice("Saving the company profile. Future drafts will use these details.");
     const response = await fetch("/api/profile", {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -172,12 +172,12 @@ export default function Dashboard() {
     });
     setProfile(await response.json());
     setIsSaving(false);
-    setNotice("Founder profile saved. Agents will use the updated context on the next run.");
+    setNotice("Company profile saved.");
   }
 
   async function runDiscovery() {
     setIsDiscovering(true);
-    setNotice("Running grant-rider discover across configured search keywords.");
+    setNotice("Looking for grant opportunities. This may take a minute.");
     const response = await fetch("/api/discover", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -194,19 +194,19 @@ export default function Dashboard() {
     setDiscoveries(payload);
     setSelectedDiscovery(payload[0] ?? null);
     setIsDiscovering(false);
-    setNotice(`Discovery complete: ${payload.length} opportunities loaded into the queue.`);
+    setNotice(`Found ${payload.length} grant opportunities. Choose one, then click Start Draft.`);
   }
 
   async function runGrant(targetUrl = grantUrl.trim()) {
     if (!targetUrl) {
-      setNotice("Paste a grant URL before launching the agent run.");
+      setNotice("Paste a grant website link first.");
       return;
     }
 
     setIsRunning(true);
     setDraft("");
     setGrantUrl(targetUrl);
-    setNotice("Grant agents are extracting, scoring, and routing the target.");
+    setNotice("Reading the grant page and making a first application draft.");
     const response = await fetch("/api/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -223,12 +223,12 @@ export default function Dashboard() {
     setActiveReport(payload);
     await refresh();
     setIsRunning(false);
-    setNotice(`Run complete: ${formatStep(payload.score.next_step)} at ${payload.score.total}/100.`);
+    setNotice(`Done. This grant scored ${payload.score.total}/100 for Abena DMS.`);
   }
 
   async function applySelectedGrant() {
     if (!selectedDiscovery) {
-      setNotice("Select a discovered grant before applying.");
+      setNotice("Choose a grant from the list first.");
       return;
     }
 
@@ -237,7 +237,7 @@ export default function Dashboard() {
 
   async function loadDraft(report = activeReport) {
     if (!report?.draft_path) {
-      setDraft("No draft was created for this opportunity. Review the score route and founder notes.");
+      setDraft("No draft was made for this grant yet. Check the score notes to see why.");
       return;
     }
 
@@ -254,17 +254,22 @@ export default function Dashboard() {
     <main className="ops-shell">
       <section className="hero-band">
         <div>
-          <p className="eyebrow"><Network size={16} /> Grant Rider Command Deck</p>
-          <h1>Abena DMS grant battle station</h1>
+          <p className="eyebrow"><BookOpenCheck size={16} /> Abena DMS Grant Rider</p>
+          <h1>Grant helper for Abena DMS</h1>
           <p className="mission-copy">
-            A network-ops dashboard for founder profile control, grant target intake, ADK agent
-            routing, draft generation, and human review.
+            Use this like a simple checklist: find grants, choose the one that looks best, then
+            let the helper make a first draft for you to review.
           </p>
+          <div className="simple-steps" aria-label="How to use Grant Rider">
+            <span>1. Find grants</span>
+            <span>2. Pick one</span>
+            <span>3. Review the draft</span>
+          </div>
         </div>
         <div className="status-stack">
-          <StatusTile icon={Wifi} label="Backend link" value="ADK ready" />
-          <StatusTile icon={Gauge} label="Profile readiness" value={`${readiness}%`} />
-          <StatusTile icon={LockKeyhole} label="Submission gate" value="Founder review" />
+          <StatusTile icon={Wifi} label="Grant helper" value="Ready" />
+          <StatusTile icon={Gauge} label="Company profile" value={`${readiness}% ready`} />
+          <StatusTile icon={LockKeyhole} label="Final step" value="You approve" />
         </div>
       </section>
 
@@ -273,17 +278,18 @@ export default function Dashboard() {
           <div>
             <PanelTitle
               icon={Search}
-              title="Grant Discovery Sweep"
+              title="Step 1: Find Grants"
               action={isDiscovering ? "Searching" : `${discoveries.length} found`}
             />
             <p>
-              Run <strong>grant-rider discover</strong>, filter the discovered targets, select the
-              best opportunity, then send it into the ADK apply pipeline.
+              Click <strong>Find Grants</strong>. Then pick one grant from the list and click
+              <strong> Start Draft</strong>. Think of it like choosing an article in Google Docs,
+              then asking for a first draft.
             </p>
           </div>
           <div className="discovery-actions">
             <label className="field compact-field">
-              <span>Results per keyword</span>
+              <span>How many per topic</span>
               <input
                 type="number"
                 min="1"
@@ -294,11 +300,11 @@ export default function Dashboard() {
             </label>
             <button className="discover-button" onClick={runDiscovery} disabled={isDiscovering}>
               {isDiscovering ? <Loader2 className="spin" size={19} /> : <Radar size={19} />}
-              Discover Grants
+              Find Grants
             </button>
             <button className="apply-button" onClick={applySelectedGrant} disabled={!selectedDiscovery || isRunning}>
               {isRunning ? <Loader2 className="spin" size={19} /> : <Target size={19} />}
-              Apply Selected
+              Start Draft
             </button>
           </div>
         </div>
@@ -307,7 +313,7 @@ export default function Dashboard() {
           <input
             value={discoveryQuery}
             onChange={(event) => setDiscoveryQuery(event.target.value)}
-            placeholder="Filter discovered grants by keyword, title, summary, or URL"
+            placeholder="Search the grant list by topic, name, or website"
             aria-label="Filter discovered grants"
           />
         </div>
@@ -324,7 +330,7 @@ export default function Dashboard() {
                 onClick={() => {
                   setSelectedDiscovery(opportunity);
                   setGrantUrl(opportunity.url);
-                  setNotice(`Selected ${opportunity.title}. Ready to apply.`);
+                  setNotice(`You picked ${opportunity.title}. Click Start Draft when ready.`);
                 }}
               >
                 <span>{opportunity.title}</span>
@@ -333,12 +339,12 @@ export default function Dashboard() {
             ))}
             {filteredDiscoveries.length === 0 && (
               <p className="empty-state">
-                No discovered grants match the current filter. Run discovery or clear the search.
+                No grants match this search. Clear the search box or click Find Grants again.
               </p>
             )}
           </div>
           <div className="selected-discovery">
-            <span className="selected-label">Selected target</span>
+            <span className="selected-label">Grant you picked</span>
             {selectedDiscovery ? (
               <>
                 <h2>{selectedDiscovery.title}</h2>
@@ -349,16 +355,16 @@ export default function Dashboard() {
                 <div className="selected-actions">
                   <button className="secondary-button" onClick={() => setGrantUrl(selectedDiscovery.url)}>
                     <Send size={17} />
-                    Load URL
+                    Use this link
                   </button>
                   <button className="apply-button inline-apply" onClick={applySelectedGrant} disabled={isRunning}>
                     {isRunning ? <Loader2 className="spin" size={17} /> : <Target size={17} />}
-                    Apply Now
+                    Start Draft
                   </button>
                 </div>
               </>
             ) : (
-              <p className="empty-state">Select a discovered grant to inspect it and apply.</p>
+              <p className="empty-state">Choose a grant from the list to see it here.</p>
             )}
           </div>
         </div>
@@ -366,17 +372,17 @@ export default function Dashboard() {
 
       <section className="command-grid">
         <div className="station-panel mission-control">
-          <PanelTitle icon={Radar} title="Manual Target Acquisition" action={isRunning ? "Running" : "Ready"} />
+          <PanelTitle icon={Radar} title="Have a grant link already?" action={isRunning ? "Working" : "Ready"} />
           <div className="target-row">
             <input
               value={grantUrl}
               onChange={(event) => setGrantUrl(event.target.value)}
-              placeholder="https://grantmaker.org/opportunity"
+              placeholder="Paste the grant website link here"
               aria-label="Grant URL"
             />
             <button className="primary-button" onClick={() => runGrant()} disabled={isRunning}>
               {isRunning ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
-              Launch
+              Start Draft
             </button>
           </div>
           <div className="pipeline">
@@ -398,10 +404,10 @@ export default function Dashboard() {
         </div>
 
         <div className="station-panel score-panel">
-          <PanelTitle icon={Activity} title="Agent Telemetry" action={activeReport ? activeReport.grant.status : "Idle"} />
+          <PanelTitle icon={Activity} title="Grant Fit Score" action={activeReport ? activeReport.grant.status : "Not started"} />
           <div className="score-orbit">
             <div>
-              <span>Match Score</span>
+              <span>Fit Score</span>
               <strong>{activeReport?.score.total ?? "--"}</strong>
               <small>/100</small>
             </div>
@@ -420,7 +426,7 @@ export default function Dashboard() {
 
       <section className="work-grid">
         <div className="station-panel profile-panel">
-          <PanelTitle icon={UserCog} title="Founder Profile" action="Editable" />
+          <PanelTitle icon={UserCog} title="Company Profile" action="You can edit this" />
           <div className="form-grid">
             <TextField label="Company" value={profile.name} onChange={(value) => setProfile({ ...profile, name: value })} />
             <TextField label="Founder" value={profile.founder_name} onChange={(value) => setProfile({ ...profile, founder_name: value })} />
@@ -451,7 +457,7 @@ export default function Dashboard() {
         </div>
 
         <div className="station-panel reports-panel">
-          <PanelTitle icon={HardDrive} title="Opportunity Queue" action={`${reports.length} logged`} />
+          <PanelTitle icon={HardDrive} title="Grants We Checked" action={`${reports.length} saved`} />
           <div className="report-list">
             {reports.map((report) => (
               <button
@@ -473,23 +479,23 @@ export default function Dashboard() {
 
       <section className="intel-grid">
         <div className="station-panel detail-panel">
-          <PanelTitle icon={ServerCog} title="Selected Grant Intel" action={activeReport ? "Loaded" : "No target"} />
+          <PanelTitle icon={ServerCog} title="Notes About This Grant" action={activeReport ? "Ready" : "Pick a grant"} />
           {activeReport ? (
             <div className="intel-body">
               <h2>{activeReport.grant.title}</h2>
               <a href={activeReport.grant.url} target="_blank" rel="noreferrer">{activeReport.grant.url}</a>
               <div className="intel-stats">
                 <StatusTile icon={SlidersHorizontal} label="Effort" value={activeReport.grant.estimated_effort} />
-                <StatusTile icon={CheckCircle2} label="Route" value={formatStep(activeReport.score.next_step)} />
+                <StatusTile icon={CheckCircle2} label="Next step" value={formatStep(activeReport.score.next_step)} />
                 <StatusTile icon={ListChecks} label="Questions" value={String(activeReport.grant.application_questions.length)} />
               </div>
-              <h3>Routing reasons</h3>
+              <h3>Why it got this score</h3>
               <ul>
                 {activeReport.score.reasons.map((reason) => <li key={reason}>{reason}</li>)}
               </ul>
               {activeReport.score.disqualifiers.length > 0 && (
                 <>
-                  <h3>Disqualifiers</h3>
+                  <h3>Possible problems</h3>
                   <ul>
                     {activeReport.score.disqualifiers.map((item) => <li key={item}>{item}</li>)}
                   </ul>
@@ -501,13 +507,13 @@ export default function Dashboard() {
               </button>
             </div>
           ) : (
-            <p className="empty-state">Run or select a grant to inspect score reasons, questions, documents, and draft output.</p>
+            <p className="empty-state">Choose a grant and start a draft to see notes here.</p>
           )}
         </div>
 
         <div className="station-panel draft-panel">
-          <PanelTitle icon={Bot} title="Application Draft Buffer" action={draft ? "Open" : "Closed"} />
-          <pre>{draft || "Drafts appear here after the deterministic threshold routes a grant into draft_application."}</pre>
+          <PanelTitle icon={Bot} title="Application Draft" action={draft ? "Open" : "Not ready"} />
+          <pre>{draft || "When a grant is a good fit, the first draft will appear here. You can read it, copy it, and make changes before anything is submitted."}</pre>
         </div>
       </section>
     </main>
