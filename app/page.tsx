@@ -183,7 +183,7 @@ export default function Dashboard() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ limit: discoveryLimit })
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response);
 
     if (!response.ok) {
       setNotice(payload.error ?? "Discovery failed.");
@@ -595,4 +595,17 @@ function ListEditor({
 
 function formatStep(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      error:
+        text.trim() ||
+        "Find Grants could not run. Please check that Firecrawl is connected on the server."
+    };
+  }
 }

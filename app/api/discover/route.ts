@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listDiscoveredOpportunities } from "../_lib/files";
+import { discoverWithFirecrawlApi } from "../_lib/discovery";
 import { runGrantCommand } from "../_lib/workflow";
 
 export const dynamic = "force-dynamic";
@@ -19,12 +20,21 @@ export async function POST(request: Request) {
   }
 
   try {
-    await runGrantCommand(["-m", "grant_application_agent.main", "discover", "--limit", String(limit)]);
-    return NextResponse.json(await listDiscoveredOpportunities());
+    const opportunities = await discoverLocally(limit);
+    return NextResponse.json(opportunities);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown discovery failure.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+async function discoverLocally(limit: number) {
+  if (process.env.FIRECRAWL_API_KEY) {
+    return discoverWithFirecrawlApi(limit);
+  }
+
+  await runGrantCommand(["-m", "grant_application_agent.main", "discover", "--limit", String(limit)]);
+  return listDiscoveredOpportunities();
 }
 
 async function proxyToAdkBackend(backendUrl: string, limit: number) {
