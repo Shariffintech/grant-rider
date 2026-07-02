@@ -21,10 +21,13 @@ export async function POST(request: Request) {
 
   try {
     const opportunities = await discoverLocally(limit);
-    return NextResponse.json(opportunities);
+    return NextResponse.json({ opportunities });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown discovery failure.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({
+      opportunities: [],
+      error: friendlyDiscoveryError(message)
+    });
   }
 }
 
@@ -59,4 +62,20 @@ function normalizeLimit(value: unknown) {
     return 5;
   }
   return Math.max(1, Math.min(10, Math.round(parsed)));
+}
+
+function friendlyDiscoveryError(message: string) {
+  if (message.includes("FIRECRAWL_API_KEY")) {
+    return "Find Grants needs FIRECRAWL_API_KEY in Vercel Settings > Environment Variables.";
+  }
+
+  if (message.includes("401") || message.toLowerCase().includes("unauthorized")) {
+    return "Firecrawl rejected the API key. Please check FIRECRAWL_API_KEY in Vercel.";
+  }
+
+  if (message.includes("404")) {
+    return "The grant search service URL was not found. Please redeploy the latest version of Granted.";
+  }
+
+  return `Find Grants could not search right now. ${message}`;
 }

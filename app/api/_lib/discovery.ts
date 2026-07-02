@@ -21,6 +21,7 @@ type FirecrawlSearchResponse = {
   data?: FirecrawlSearchItem[] | { web?: FirecrawlSearchItem[] };
   success?: boolean;
   error?: string;
+  warning?: string;
 };
 
 export async function discoverWithFirecrawlApi(limit: number) {
@@ -29,14 +30,20 @@ export async function discoverWithFirecrawlApi(limit: number) {
     throw new Error("FIRECRAWL_API_KEY is not set.");
   }
 
-  const results = await Promise.all(
+  const results = await Promise.allSettled(
     searchKeywords.map((keyword) => searchKeywordWithFirecrawl(keyword, limit, apiKey))
   );
   const seenUrls = new Set<string>();
   const opportunities: DiscoveredOpportunity[] = [];
+  const errors: string[] = [];
 
-  for (const batch of results) {
-    for (const opportunity of batch) {
+  for (const result of results) {
+    if (result.status === "rejected") {
+      errors.push(result.reason instanceof Error ? result.reason.message : "A grant search failed.");
+      continue;
+    }
+
+    for (const opportunity of result.value) {
       if (seenUrls.has(opportunity.url)) {
         continue;
       }
@@ -45,11 +52,19 @@ export async function discoverWithFirecrawlApi(limit: number) {
     }
   }
 
+  if (opportunities.length === 0) {
+    throw new Error(
+      errors.length > 0
+        ? errors.join(" ")
+        : "Firecrawl did not return any grant search results."
+    );
+  }
+
   return opportunities;
 }
 
 async function searchKeywordWithFirecrawl(keyword: string, limit: number, apiKey: string) {
-  const response = await fetch("https://api.firecrawl.dev/v1/search", {
+  const response = await fetch("https://api.firecrawl.dev/v2/search", {
     method: "POST",
     headers: {
       authorization: `Bearer ${apiKey}`,
@@ -58,7 +73,9 @@ async function searchKeywordWithFirecrawl(keyword: string, limit: number, apiKey
     body: JSON.stringify({
       query: keyword,
       limit,
-      sources: ["web"]
+      sources: ["web"],
+      country: "US",
+      timeout: 30000
     })
   });
 

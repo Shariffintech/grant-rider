@@ -184,17 +184,22 @@ export default function Dashboard() {
       body: JSON.stringify({ limit: discoveryLimit })
     });
     const payload = await readJsonResponse(response);
+    const opportunities = Array.isArray(payload) ? payload : payload.opportunities ?? [];
 
-    if (!response.ok) {
+    if (!response.ok || payload.error) {
       setNotice(payload.error ?? "Discovery failed.");
       setIsDiscovering(false);
       return;
     }
 
-    setDiscoveries(payload);
-    setSelectedDiscovery(payload[0] ?? null);
+    setDiscoveries(opportunities);
+    setSelectedDiscovery(opportunities[0] ?? null);
     setIsDiscovering(false);
-    setNotice(`Found ${payload.length} grant opportunities. Choose one, then click Start Draft.`);
+    setNotice(
+      opportunities.length > 0
+        ? `Found ${opportunities.length} grant opportunities. Choose one, then click Start Draft.`
+        : "No grants came back from the search. Try again in a minute."
+    );
   }
 
   async function runGrant(targetUrl = grantUrl.trim()) {
