@@ -101,6 +101,15 @@ const pipeline = [
   { label: "You review", icon: ShieldCheck }
 ];
 
+const loaderBills = Array.from({ length: 28 }, (_, index) => ({
+  id: index,
+  left: `${(index * 37) % 100}%`,
+  delay: `${(index % 9) * 0.28}s`,
+  duration: `${3.8 + (index % 5) * 0.32}s`,
+  drift: `${index % 2 === 0 ? "" : "-"}${18 + (index % 7) * 7}px`,
+  rotation: `${index % 2 === 0 ? "" : "-"}${18 + (index % 8) * 11}deg`
+}));
+
 export default function Dashboard() {
   const [profile, setProfile] = useState<FounderProfile>(emptyProfile);
   const [reports, setReports] = useState<WorkflowResult[]>([]);
@@ -115,6 +124,12 @@ export default function Dashboard() {
   const [discoveryQuery, setDiscoveryQuery] = useState("");
   const [discoveryLimit, setDiscoveryLimit] = useState(5);
   const [notice, setNotice] = useState("Start by clicking Find Grants.");
+  const isLoadingOverlayActive = isDiscovering || isRunning || isSaving;
+  const loadingTitle = isDiscovering
+    ? "Searching for grants"
+    : isRunning
+      ? "Building your draft"
+      : "Saving your profile";
 
   const readiness = useMemo(() => {
     const checks = [
@@ -256,7 +271,8 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="ops-shell">
+    <>
+    <main className={isLoadingOverlayActive ? "ops-shell loading-blur" : "ops-shell"}>
       <section className="hero-band">
         <div>
           <p className="eyebrow"><BookOpenCheck size={16} /> Granted</p>
@@ -522,6 +538,41 @@ export default function Dashboard() {
         </div>
       </section>
     </main>
+    {isLoadingOverlayActive && <GrantLoadingOverlay title={loadingTitle} />}
+    </>
+  );
+}
+
+function GrantLoadingOverlay({ title }: { title: string }) {
+  return (
+    <div className="grant-loading-overlay" role="status" aria-live="polite" aria-label={title}>
+      <div className="money-rain" aria-hidden="true">
+        {loaderBills.map((bill) => (
+          <span
+            key={bill.id}
+            style={
+              {
+                "--bill-left": bill.left,
+                "--bill-delay": bill.delay,
+                "--bill-duration": bill.duration,
+                "--bill-drift": bill.drift,
+                "--bill-rotation": bill.rotation
+              } as React.CSSProperties
+            }
+          >
+            $
+          </span>
+        ))}
+      </div>
+      <div className="loader-showcase">
+        <img src="/images/loaders/grant-loader-cash.png" alt="" />
+        <img src="/images/loaders/grant-loader-mustang.png" alt="" />
+      </div>
+      <div className="loader-copy">
+        <p>{title}</p>
+        <strong>Watch your change!</strong>
+      </div>
+    </div>
   );
 }
 

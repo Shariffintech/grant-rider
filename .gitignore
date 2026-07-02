@@ -11,3 +11,4 @@ outputs/
 node_modules/
 .next/
 .DS_Store
+.vercel
