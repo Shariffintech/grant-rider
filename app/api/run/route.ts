@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { scrapeWithFirecrawlApi } from "../_lib/discovery";
 import { runGrantCommand } from "../_lib/workflow";
 
 export const maxDuration = 60;
@@ -26,15 +27,21 @@ export async function POST(request: Request) {
 }
 
 async function proxyToAdkBackend(backendUrl: string, url: string) {
+  let pageText: string | undefined;
+  if (process.env.FIRECRAWL_API_KEY) {
+    pageText = await scrapeWithFirecrawlApi(url).catch(() => undefined);
+  }
+
   const response = await fetch(`${backendUrl.replace(/\/$/, "")}/run`, {
     method: "POST",
+    cache: "no-store",
     headers: {
       "content-type": "application/json",
       ...(process.env.GRANT_RIDER_API_KEY
         ? { authorization: `Bearer ${process.env.GRANT_RIDER_API_KEY}` }
         : {})
     },
-    body: JSON.stringify({ url })
+    body: JSON.stringify({ url, pageText })
   });
 
   const payload = await response.json();

@@ -122,11 +122,34 @@ export async function readDraft(draftPath: string) {
   const resolved = path.resolve(draftPath);
   const allowedRoot = path.resolve(draftsDir);
 
-  if (!resolved.startsWith(allowedRoot)) {
+  const relativePath = path.relative(allowedRoot, resolved);
+  if (relativePath === ".." || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
     throw new Error("Draft path is outside the outputs/drafts directory.");
   }
 
   return fs.readFile(resolved, "utf8");
+}
+
+export async function archiveReport(reportPath: string): Promise<WorkflowResult> {
+  const resolved = path.resolve(reportPath);
+  const allowedRoot = path.resolve(reportsDir);
+
+  const relativePath = path.relative(allowedRoot, resolved);
+  if (relativePath === ".." || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
+    throw new Error("Report path is outside the outputs/reports directory.");
+  }
+
+  const raw = await fs.readFile(resolved, "utf8");
+  const report = JSON.parse(raw) as WorkflowResult;
+  report.grant.status = "archived";
+  report.score.next_step = "archive_opportunity";
+
+  if (!report.score.disqualifiers.includes("Archived manually after founder review.")) {
+    report.score.disqualifiers.push("Archived manually after founder review.");
+  }
+
+  await fs.writeFile(resolved, JSON.stringify(report, null, 2), "utf8");
+  return report;
 }
 
 function cleanList(value: unknown) {

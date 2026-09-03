@@ -18,9 +18,37 @@ def _overlaps(left: list[str], right: list[str]) -> list[str]:
     return sorted(set(matches))
 
 
+def _grant_text(grant: GrantDetails) -> str:
+    values = [
+        grant.title,
+        grant.funder,
+        grant.eligibility_summary,
+        grant.geographic_restrictions,
+        grant.business_stage_restrictions,
+        grant.nonprofit_for_profit_requirements,
+        grant.submission_method,
+        *grant.eligible_entity_types,
+        *grant.eligible_locations,
+        *grant.eligible_stages,
+        *grant.focus_areas,
+        *grant.allowed_uses,
+        *grant.required_documents,
+        *grant.application_questions,
+        *grant.extraction_notes,
+    ]
+    return " ".join(value for value in values if value).lower()
+
+
 def score_grant(profile: FounderProfile, grant: GrantDetails) -> GrantScore:
     reasons: list[str] = []
     disqualifiers: list[str] = []
+    grant_text = _grant_text(grant)
+    excluded_matches = [
+        value for value in profile.excluded_grants if value.strip().lower() in grant_text
+    ]
+
+    if excluded_matches:
+        disqualifiers.append(f"Matches excluded grant terms: {', '.join(excluded_matches)}.")
 
     mission_matches = _overlaps(profile.focus_areas + [profile.industry], grant.focus_areas)
     mission = 25 if mission_matches else 0

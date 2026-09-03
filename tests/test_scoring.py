@@ -13,6 +13,7 @@ def profile() -> FounderProfile:
         eligible_locations=["Pennsylvania", "New Jersey"],
         target_customers=["school districts"],
         funding_needs=["product development", "pilot programs"],
+        excluded_grants=["nonprofit only"],
         minimum_score_to_draft=80,
     )
 
@@ -50,3 +51,21 @@ def test_unknown_fields_do_not_receive_full_credit() -> None:
     result = score_grant(profile(), grant)
     assert result.total == 25
     assert result.next_step == "archive_opportunity"
+
+
+def test_profile_excluded_terms_are_disqualifying() -> None:
+    grant = GrantDetails(
+        title="Education Grant",
+        url="https://example.com/grant",
+        eligibility_summary="This opportunity is nonprofit only.",
+        eligible_entity_types=["for-profit"],
+        eligible_locations=["Pennsylvania"],
+        eligible_stages=["pre-seed"],
+        focus_areas=["special education", "AI"],
+        allowed_uses=["product development"],
+        estimated_effort="low",
+    )
+    result = score_grant(profile(), grant)
+
+    assert result.next_step == "archive_opportunity"
+    assert "Matches excluded grant terms: nonprofit only." in result.disqualifiers

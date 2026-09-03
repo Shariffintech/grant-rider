@@ -57,18 +57,25 @@ def parse_grant(url: str, text: str, model: str = DEFAULT_MODEL) -> GrantDetails
     if not (os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_GENAI_USE_VERTEXAI")):
         return _heuristic_parse(url, text)
 
-    client = genai.Client()
-    prompt = f"""Extract the grant page into the provided schema.
+    try:
+        client = genai.Client()
+        prompt = f"""Extract the grant page into the provided schema.
 Do not infer missing facts. Use empty lists or null for unknown fields.
 The source URL is {url}.
 
 PAGE TEXT:
 {text[:100_000]}"""
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config={"response_mime_type": "application/json", "response_schema": GrantDetails},
-    )
-    payload = json.loads(response.text)
-    payload["url"] = url
-    return GrantDetails.model_validate(payload)
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config={"response_mime_type": "application/json", "response_schema": GrantDetails},
+        )
+        payload = json.loads(response.text)
+        payload["url"] = url
+        return GrantDetails.model_validate(payload)
+    except Exception as error:
+        grant = _heuristic_parse(url, text)
+        grant.extraction_notes.append(
+            f"AI extraction failed, so heuristic extraction was used: {type(error).__name__}."
+        )
+        return grant

@@ -101,15 +101,6 @@ const pipeline = [
   { label: "You review", icon: ShieldCheck }
 ];
 
-const loaderBills = Array.from({ length: 28 }, (_, index) => ({
-  id: index,
-  left: `${(index * 37) % 100}%`,
-  delay: `${(index % 9) * 0.28}s`,
-  duration: `${3.8 + (index % 5) * 0.32}s`,
-  drift: `${index % 2 === 0 ? "" : "-"}${18 + (index % 7) * 7}px`,
-  rotation: `${index % 2 === 0 ? "" : "-"}${18 + (index % 8) * 11}deg`
-}));
-
 export default function Dashboard() {
   const [profile, setProfile] = useState<FounderProfile>(emptyProfile);
   const [reports, setReports] = useState<WorkflowResult[]>([]);
@@ -121,15 +112,18 @@ export default function Dashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [discoveryQuery, setDiscoveryQuery] = useState("");
   const [discoveryLimit, setDiscoveryLimit] = useState(5);
   const [notice, setNotice] = useState("Start by clicking Find Grants.");
-  const isLoadingOverlayActive = isDiscovering || isRunning || isSaving;
+  const isLoadingOverlayActive = isDiscovering || isRunning || isSaving || isArchiving;
   const loadingTitle = isDiscovering
     ? "Searching for grants"
     : isRunning
       ? "Building your draft"
-      : "Saving your profile";
+      : isSaving
+        ? "Saving your profile"
+        : "Archiving grant";
 
   const readiness = useMemo(() => {
     const checks = [
@@ -268,6 +262,41 @@ export default function Dashboard() {
     });
     const payload = await response.json();
     setDraft(payload.content ?? payload.error ?? "Draft unavailable.");
+  }
+
+  async function archiveActiveGrant() {
+    if (!activeReport) {
+      setNotice("Choose a checked grant first.");
+      return;
+    }
+
+    if (activeReport.grant.status === "archived") {
+      setNotice(`${activeReport.grant.title} is already archived.`);
+      return;
+    }
+
+    setIsArchiving(true);
+    setNotice("Archiving this grant after review.");
+    const response = await fetch("/api/archive", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reportPath: activeReport.report_path })
+    });
+    const payload = await readJsonResponse(response);
+
+    if (!response.ok) {
+      setNotice(payload.error ?? payload.detail ?? "Could not archive this grant.");
+      setIsArchiving(false);
+      return;
+    }
+
+    setActiveReport(payload);
+    setReports((current) =>
+      current.map((report) => (report.report_path === payload.report_path ? payload : report))
+    );
+    setDraft("");
+    setIsArchiving(false);
+    setNotice(`${payload.grant.title} has been archived.`);
   }
 
   return (
@@ -491,7 +520,7 @@ export default function Dashboard() {
               >
                 <span>{report.grant.title}</span>
                 <b>{report.score.total}</b>
-                <small>{formatStep(report.score.next_step)}</small>
+                <small>{formatStep(report.grant.status)} · {formatStep(report.score.next_step)}</small>
               </button>
             ))}
           </div>
@@ -522,10 +551,20 @@ export default function Dashboard() {
                   </ul>
                 </>
               )}
-              <button className="secondary-button" onClick={() => loadDraft()}>
-                <ClipboardCheck size={17} />
-                Open Draft
-              </button>
+              <div className="review-actions">
+                <button className="secondary-button" onClick={() => loadDraft()}>
+                  <ClipboardCheck size={17} />
+                  Open Draft
+                </button>
+                <button
+                  className="danger-button"
+                  onClick={archiveActiveGrant}
+                  disabled={isArchiving || activeReport.grant.status === "archived"}
+                >
+                  {isArchiving ? <Loader2 className="spin" size={17} /> : <HardDrive size={17} />}
+                  {activeReport.grant.status === "archived" ? "Already Archived" : "Archive Grant"}
+                </button>
+              </div>
             </div>
           ) : (
             <p className="empty-state">Choose a grant and start a draft to see notes here.</p>
@@ -546,31 +585,18 @@ export default function Dashboard() {
 function GrantLoadingOverlay({ title }: { title: string }) {
   return (
     <div className="grant-loading-overlay" role="status" aria-live="polite" aria-label={title}>
-      <div className="money-rain" aria-hidden="true">
-        {loaderBills.map((bill) => (
-          <span
-            key={bill.id}
-            style={
-              {
-                "--bill-left": bill.left,
-                "--bill-delay": bill.delay,
-                "--bill-duration": bill.duration,
-                "--bill-drift": bill.drift,
-                "--bill-rotation": bill.rotation
-              } as React.CSSProperties
-            }
-          >
-            $
-          </span>
-        ))}
-      </div>
-      <div className="loader-showcase">
-        <img src="/images/loaders/grant-loader-cash.png" alt="" />
-        <img src="/images/loaders/grant-loader-mustang.png" alt="" />
-      </div>
-      <div className="loader-copy">
-        <p>{title}</p>
-        <strong>Watch your change!</strong>
+      <div className="loader-card">
+        <div className="loader-showcase" aria-hidden="true">
+          <span className="loader-orbit" />
+          <img src="/images/loaders/polar-bear-loader.webp" alt="" />
+        </div>
+        <div className="loader-copy">
+          <Loader2 className="spin" size={20} aria-hidden="true" />
+          <div>
+            <strong>{title}</strong>
+            <p>Please wait a moment.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
