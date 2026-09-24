@@ -43,7 +43,25 @@ minimum_score_to_draft: 80
     monkeypatch.setattr("grant_application_agent.workflow.scrape_page", lambda _url: "page")
     monkeypatch.setattr("grant_application_agent.workflow.parse_grant", lambda _url, _text: grant)
 
-    response = TestClient(app).post("/run", json={"url": "https://example.com/grant"})
+    response = TestClient(app).post(
+        "/run",
+        json={
+            "url": "https://example.com/grant",
+            "profile": {
+                "name": "Visitor Co",
+                "founder_name": "Visitor",
+                "industry": "Education Technology",
+                "entity_type": "for-profit",
+                "focus_areas": ["special education"],
+                "business_stage": "pre-seed",
+                "eligible_locations": ["Pennsylvania"],
+                "target_customers": ["school districts"],
+                "funding_needs": ["product development"],
+                "excluded_grants": [],
+                "minimum_score_to_draft": 80,
+            },
+        },
+    )
 
     assert response.status_code == 200
     payload = response.json()
@@ -54,6 +72,7 @@ minimum_score_to_draft: 80
 
     assert draft_response.status_code == 200
     assert "High Fit Grant" in draft_response.json()["content"]
+    assert "Visitor Co" in draft_response.json()["content"]
 
     reports_response = TestClient(app).get("/reports")
     assert reports_response.status_code == 200

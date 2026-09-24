@@ -28,6 +28,7 @@ app = FastAPI(title="Grant Rider API")
 class RunRequest(BaseModel):
     url: HttpUrl
     pageText: str | None = None
+    profile: FounderProfile | None = None
 
 
 class DiscoverRequest(BaseModel):
@@ -145,10 +146,31 @@ def health() -> dict[str, str]:
 
 @app.post("/run", dependencies=[Depends(verify_api_key)])
 def run_grant(request: RunRequest) -> dict:
-    if request.pageText:
-        result = run_url_with_text(str(request.url), request.pageText, profile_path(), OUTPUT_DIR)
-    else:
-        result = run_url(str(request.url), profile_path(), OUTPUT_DIR)
+    request_profile_path = profile_path()
+    temporary_profile_path: Path | None = None
+
+    if request.profile is not None:
+        temporary_profile_path = (
+            Path(tempfile.mkdtemp(prefix="grant-rider-profile-")) / "founder_profile.yaml"
+        )
+        temporary_profile_path.write_text(
+            yaml.safe_dump(request.profile.model_dump(mode="json"), sort_keys=False),
+            encoding="utf-8",
+        )
+        request_profile_path = temporary_profile_path
+
+    try:
+        if request.pageText:
+            result = run_url_with_text(
+                str(request.url), request.pageText, request_profile_path, OUTPUT_DIR
+            )
+        else:
+            result = run_url(str(request.url), request_profile_path, OUTPUT_DIR)
+    finally:
+        if temporary_profile_path is not None:
+            temporary_profile_path.unlink(missing_ok=True)
+            temporary_profile_path.parent.rmdir()
+
     result = persist_result_artifacts(result)
     return result.model_dump(mode="json")
 

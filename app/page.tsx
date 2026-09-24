@@ -16,7 +16,7 @@ import {
   Loader2,
   LockKeyhole,
   Radar,
-  Save,
+  RotateCcw,
   Search,
   Send,
   ServerCog,
@@ -111,19 +111,16 @@ export default function Dashboard() {
   const [draft, setDraft] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [discoveryQuery, setDiscoveryQuery] = useState("");
   const [discoveryLimit, setDiscoveryLimit] = useState(5);
   const [notice, setNotice] = useState("Start by clicking Find Grants.");
-  const isLoadingOverlayActive = isDiscovering || isRunning || isSaving || isArchiving;
+  const isLoadingOverlayActive = isDiscovering || isRunning || isArchiving;
   const loadingTitle = isDiscovering
     ? "Searching for grants"
     : isRunning
       ? "Building your draft"
-      : isSaving
-        ? "Saving your profile"
-        : "Archiving grant";
+      : "Archiving grant";
 
   const readiness = useMemo(() => {
     const checks = [
@@ -156,32 +153,21 @@ export default function Dashboard() {
   }, []);
 
   async function refresh() {
-    const [profileResponse, reportsResponse, discoveriesResponse] = await Promise.all([
-      fetch("/api/profile"),
+    const [reportsResponse, discoveriesResponse] = await Promise.all([
       fetch("/api/reports"),
       fetch("/api/discover")
     ]);
-    const nextProfile = await profileResponse.json();
     const nextReports = await reportsResponse.json();
     const nextDiscoveries = await discoveriesResponse.json();
-    setProfile(nextProfile);
     setReports(nextReports);
     setDiscoveries(nextDiscoveries);
     setSelectedDiscovery((current) => current ?? nextDiscoveries[0] ?? null);
     setActiveReport(nextReports[0] ?? null);
   }
 
-  async function saveProfile() {
-    setIsSaving(true);
-    setNotice("Saving the company profile. Future drafts will use these details.");
-    const response = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(profile)
-    });
-    setProfile(await response.json());
-    setIsSaving(false);
-    setNotice("Company profile saved.");
+  function resetProfile() {
+    setProfile({ ...emptyProfile });
+    setNotice("Company profile cleared. It will also reset whenever this page is refreshed.");
   }
 
   async function runDiscovery() {
@@ -224,7 +210,7 @@ export default function Dashboard() {
     const response = await fetch("/api/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ url: targetUrl })
+      body: JSON.stringify({ url: targetUrl, profile })
     });
     const payload = await response.json();
 
@@ -237,7 +223,7 @@ export default function Dashboard() {
     setActiveReport(payload);
     await refresh();
     setIsRunning(false);
-    setNotice(`Done. This grant scored ${payload.score.total}/100 for Abena DMS.`);
+    setNotice(`Done. This grant scored ${payload.score.total}/100 for ${profile.name || "your company"}.`);
   }
 
   async function applySelectedGrant() {
@@ -476,7 +462,7 @@ export default function Dashboard() {
 
       <section className="work-grid">
         <div className="station-panel profile-panel">
-          <PanelTitle icon={UserCog} title="Company Profile" action="You can edit this" />
+          <PanelTitle icon={UserCog} title="Company Profile" action="Resets on refresh" />
           <div className="form-grid">
             <TextField label="Company" value={profile.name} onChange={(value) => setProfile({ ...profile, name: value })} />
             <TextField label="Founder" value={profile.founder_name} onChange={(value) => setProfile({ ...profile, founder_name: value })} />
@@ -500,9 +486,9 @@ export default function Dashboard() {
           <ListEditor label="Eligible locations" values={profile.eligible_locations} onChange={(values) => setProfile({ ...profile, eligible_locations: values })} />
           <ListEditor label="Funding needs" values={profile.funding_needs} onChange={(values) => setProfile({ ...profile, funding_needs: values })} />
           <ListEditor label="Excluded grants" values={profile.excluded_grants} onChange={(values) => setProfile({ ...profile, excluded_grants: values })} />
-          <button className="secondary-button" onClick={saveProfile} disabled={isSaving}>
-            {isSaving ? <Loader2 className="spin" size={17} /> : <Save size={17} />}
-            Save Profile
+          <button className="secondary-button" onClick={resetProfile}>
+            <RotateCcw size={17} />
+            Clear Profile
           </button>
         </div>
 
