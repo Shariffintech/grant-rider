@@ -92,6 +92,16 @@ const emptyProfile: FounderProfile = {
   minimum_score_to_draft: 80
 };
 
+const suggestedProfile: FounderProfile = {
+  ...emptyProfile,
+  name: "Abena DMS",
+  founder_name: "Shariff Tarver",
+  industry: "Childcare and early-learning compliance software",
+  focus_areas: ["Childcare compliance", "Early learning and preschool", "Licensing and inspection readiness", "Staff compliance and background-check tracking", "Audit-ready records and documentation"],
+  eligible_locations: ["New Jersey", "Pennsylvania"],
+  target_customers: ["Childcare center directors and operators", "Early-learning providers", "Family child-care providers"]
+};
+
 const pipeline = [
   { label: "Read page", icon: Antenna },
   { label: "Pull details", icon: FileSearch },
@@ -112,6 +122,7 @@ export default function Dashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [discoveryQuery, setDiscoveryQuery] = useState("");
   const [discoveryLimit, setDiscoveryLimit] = useState(5);
   const [notice, setNotice] = useState("Start by clicking Find Grants.");
@@ -148,8 +159,26 @@ export default function Dashboard() {
     );
   }, [discoveries, discoveryQuery]);
 
+  const profileSuggestions = activeReport ? getProfileSuggestions(activeReport, profile) : [];
+
   useEffect(() => {
     refresh();
+    fetch("/api/profile", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Profile unavailable");
+        const saved = await response.json() as FounderProfile;
+        const completed = { ...suggestedProfile, ...saved };
+        for (const key of ["focus_areas", "eligible_locations", "target_customers", "funding_needs", "excluded_grants"] as const) {
+          if (!completed[key]?.length) completed[key] = suggestedProfile[key];
+        }
+        setProfile(completed);
+        await fetch("/api/profile", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(completed)
+        });
+      })
+      .catch(() => setProfile(suggestedProfile));
   }, []);
 
   async function refresh() {
@@ -163,6 +192,26 @@ export default function Dashboard() {
     setDiscoveries(nextDiscoveries);
     setSelectedDiscovery((current) => current ?? nextDiscoveries[0] ?? null);
     setActiveReport(nextReports[0] ?? null);
+  }
+
+
+  async function saveProfile() {
+    setIsSavingProfile(true);
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(profile)
+      });
+      const payload = await readJsonResponse(response);
+      if (!response.ok) throw new Error(payload.detail ?? payload.error ?? "Could not save profile.");
+      setProfile(payload);
+      setNotice("Company profile saved. Grant fit scores will use these details.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not save profile.");
+    } finally {
+      setIsSavingProfile(false);
+    }
   }
 
   function resetProfile() {
@@ -220,10 +269,15 @@ export default function Dashboard() {
       return;
     }
 
-    setActiveReport(payload);
     await refresh();
+    setActiveReport(payload);
+    if (payload.draft_path) {
+      await loadDraft(payload);
+      setNotice(`Draft ready for review; it has not been submitted. Fit score: ${payload.score.total}/100 for ${profile.name || "your company"}.`);
+    } else {
+      setNotice(`The workflow did not return a draft. Fit score: ${payload.score.total}/100. Please retry or review the report.`);
+    }
     setIsRunning(false);
-    setNotice(`Done. This grant scored ${payload.score.total}/100 for ${profile.name || "your company"}.`);
   }
 
   async function applySelectedGrant() {
@@ -452,7 +506,7 @@ export default function Dashboard() {
             {Object.entries(activeReport?.score.breakdown ?? {}).map(([key, value]) => (
               <div className="meter-row" key={key}>
                 <span>{formatStep(key)}</span>
-                <div><i style={{ width: `${Math.min(100, value * 4)}%` }} /></div>
+                <div><i style={{ width: `${Math.min(100, value / (key === "mission_fit" || key === "eligibility_fit" ? 25 : key === "funding_use_fit" ? 20 : 10) * 100)}%` }} /></div>
                 <b>{value}</b>
               </div>
             ))}
@@ -462,7 +516,7 @@ export default function Dashboard() {
 
       <section className="work-grid">
         <div className="station-panel profile-panel">
-          <PanelTitle icon={UserCog} title="Company Profile" action="Resets on refresh" />
+          <PanelTitle icon={UserCog} title="Company Profile" action="Saved details" />
           <div className="form-grid">
             <TextField label="Company" value={profile.name} onChange={(value) => setProfile({ ...profile, name: value })} />
             <TextField label="Founder" value={profile.founder_name} onChange={(value) => setProfile({ ...profile, founder_name: value })} />
@@ -486,9 +540,18 @@ export default function Dashboard() {
           <ListEditor label="Eligible locations" values={profile.eligible_locations} onChange={(values) => setProfile({ ...profile, eligible_locations: values })} />
           <ListEditor label="Funding needs" values={profile.funding_needs} onChange={(values) => setProfile({ ...profile, funding_needs: values })} />
           <ListEditor label="Excluded grants" values={profile.excluded_grants} onChange={(values) => setProfile({ ...profile, excluded_grants: values })} />
+          <div className="profile-guidance">
+            <h3>Profile suggestions</h3>
+            <p>Generated from the details already entered. Treat these as prompts, not facts; only save what is true.</p>
+            <ul>{getProfileCompletionSuggestions(profile).map((item) => <li key={item}>{item}</li>)}</ul>
+          </div>
           <button className="secondary-button" onClick={resetProfile}>
             <RotateCcw size={17} />
             Clear Profile
+          </button>
+          <button className="primary-button" onClick={saveProfile} disabled={isSavingProfile}>
+            {isSavingProfile ? <Loader2 className="spin" size={17} /> : <CheckCircle2 size={17} />}
+            {isSavingProfile ? "Saving" : "Save Profile"}
           </button>
         </div>
 
@@ -518,8 +581,18 @@ export default function Dashboard() {
           <PanelTitle icon={ServerCog} title="Notes About This Grant" action={activeReport ? "Ready" : "Pick a grant"} />
           {activeReport ? (
             <div className="intel-body">
-              <h2>{activeReport.grant.title}</h2>
-              <a href={activeReport.grant.url} target="_blank" rel="noreferrer">{activeReport.grant.url}</a>
+              <h2>{displayGrantTitle(activeReport.grant.title, activeReport.grant.url)}</h2>
+              <a href={activeReport.grant.url} target="_blank" rel="noreferrer">Open official grant page</a>
+              {(activeReport.grant.funder || activeReport.grant.deadline || activeReport.grant.funding_amount || activeReport.grant.eligibility_summary || activeReport.grant.focus_areas.length > 0) && (
+                <div className="grant-facts">
+                  {activeReport.grant.funder && <p><strong>Funder:</strong> {activeReport.grant.funder}</p>}
+                  {activeReport.grant.deadline && <p><strong>Deadline:</strong> {activeReport.grant.deadline}</p>}
+                  {activeReport.grant.funding_amount != null && <p><strong>Funding:</strong> {new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(activeReport.grant.funding_amount)}</p>}
+                  {activeReport.grant.eligibility_summary && <p><strong>Eligibility:</strong> {activeReport.grant.eligibility_summary}</p>}
+                  {activeReport.grant.focus_areas.length > 0 && <p><strong>Grant priorities:</strong> {activeReport.grant.focus_areas.join(", ")}</p>}
+                </div>
+              )}
+              {activeReport.grant.extraction_notes.length > 0 && <><h3>Page-reading notes</h3><ul>{activeReport.grant.extraction_notes.map((note) => <li key={note}>{note}</li>)}</ul></>}
               <div className="intel-stats">
                 <StatusTile icon={SlidersHorizontal} label="Effort" value={activeReport.grant.estimated_effort} />
                 <StatusTile icon={CheckCircle2} label="Next step" value={formatStep(activeReport.score.next_step)} />
@@ -537,6 +610,9 @@ export default function Dashboard() {
                   </ul>
                 </>
               )}
+              <h3>Profile details to verify</h3>
+              <p>Only add information that is accurate for Abena. Profile changes cannot make an ineligible grant eligible.</p>
+              <ul>{profileSuggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}</ul>
               <div className="review-actions">
                 <button className="secondary-button" onClick={() => loadDraft()}>
                   <ClipboardCheck size={17} />
@@ -558,7 +634,7 @@ export default function Dashboard() {
         </div>
 
         <div className="station-panel draft-panel">
-          <PanelTitle icon={Bot} title="Application Draft" action={draft ? "Open" : "Not ready"} />
+          <PanelTitle icon={Bot} title="Application Draft" action={draft ? "Not submitted" : "Waiting for grant"} />
           <pre>{draft || "When a grant is a good fit, the first draft will appear here. You can read it, copy it, and make changes before anything is submitted."}</pre>
         </div>
       </section>
@@ -663,6 +739,37 @@ function ListEditor({
 
 function formatStep(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function displayGrantTitle(title: string, url: string) {
+  const cleaned = title.replace(/^\s*!?\[[^\]]*\]\([^)]*\)\s*/g, "").replace(/^\s*#+\s*/, "").trim();
+  if (cleaned && !/^\[?(skip to|menu|main content)/i.test(cleaned) && cleaned.length < 180) return cleaned;
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "Grant opportunity"; }
+}
+
+function getProfileCompletionSuggestions(profile: FounderProfile) {
+  const customers = profile.target_customers.length ? profile.target_customers.join(", ") : "the people Abena serves";
+  const focus = profile.focus_areas.length ? profile.focus_areas.join(", ") : profile.industry || "the problem Abena solves";
+  const suggestions: string[] = [];
+  if (!profile.business_stage.trim()) suggestions.push(`Choose the accurate stage for ${profile.name || "the company"} (for example, pilot, early revenue, or scaling) and add one sentence of evidence.`);
+  if (!profile.funding_needs.length) suggestions.push(`Based on ${profile.industry || "the company's focus"}, consider whether product development, provider onboarding, or compliance-workflow improvements are real funding needs for ${customers}. Add only confirmed uses.`);
+  if (!profile.target_customers.length) suggestions.push(`Name the specific buyer or user for ${focus}; this helps distinguish childcare providers, families, and public schools.`);
+  if (!profile.eligible_locations.length) suggestions.push("Add the states where the company operates or will deliver the funded project; use only confirmed locations.");
+  if (!profile.focus_areas.length) suggestions.push(`Use the industry already entered (${profile.industry || "not specified"}) to name 2-4 specific problems the product addresses, rather than broad adjacent sectors.`);
+  suggestions.push(`Founder story starter: ${profile.name || "[Company]"} helps ${customers} with ${focus} so they can [verified outcome]. Fill the bracket with an outcome you can support.`);
+  return suggestions;
+}
+
+function getProfileSuggestions(report: WorkflowResult, profile: FounderProfile) {
+  const suggestions: string[] = [];
+  const breakdown = report.score.breakdown;
+  if ((breakdown.mission_fit ?? 0) < 15) suggestions.push(profile.focus_areas.length ? "Mission fit is low. Keep Abena\u0027s childcare and early-learning focus accurate; pursue this grant only if the funded project directly serves those priorities." : "Add Abena\u0027s verified childcare and early-learning focus areas to the profile.");
+  if ((breakdown.eligibility_fit ?? 0) < 15) suggestions.push("Check the official eligibility rules and record Abena\u0027s actual legal entity and applicant status; do not change the entity type just to raise the score.");
+  if ((breakdown.funding_use_fit ?? 0) < 15) suggestions.push(profile.funding_needs.length ? "Compare the real planned use of funds with the funder\u0027s allowed uses and describe any direct match precisely." : "List specific, current uses Abena would fund only if they are genuine, then compare them with this grant\u0027s allowed uses.");
+  if ((breakdown.geographic_fit ?? 0) < 7) suggestions.push("Confirm Abena\u0027s actual operating/service locations and whether the funder accepts applicants or projects there.");
+  if ((breakdown.stage_fit ?? 0) < 7) suggestions.push(profile.business_stage ? `Verify that the saved stage (${profile.business_stage}) matches the stage this grant funds.` : "Add Abena\u0027s current business stage and compare it with the grant\u0027s stated stage requirements.");
+  if ((breakdown.application_effort ?? 0) < 7) suggestions.push("Effort fit is based on the application burden, not the founder profile; review the official application and deadline before deciding.");
+  return suggestions;
 }
 
 async function readJsonResponse(response: Response) {

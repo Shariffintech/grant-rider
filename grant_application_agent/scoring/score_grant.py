@@ -96,10 +96,9 @@ def score_grant(profile: FounderProfile, grant: GrantDetails) -> GrantScore:
         next_step = "archive_opportunity"
     elif total >= profile.minimum_score_to_draft:
         next_step = "draft_application"
-    elif total >= 60:
-        next_step = "needs_founder_review"
     else:
-        next_step = "archive_opportunity"
+        # Missing extracted facts are uncertainty, not evidence of a bad fit.
+        next_step = "needs_founder_review"
     return GrantScore(
         total=total,
         breakdown=breakdown,

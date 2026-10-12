@@ -50,7 +50,7 @@ def test_unknown_fields_do_not_receive_full_credit() -> None:
     grant = GrantDetails(title="Unknown Grant", url="https://example.com/grant")
     result = score_grant(profile(), grant)
     assert result.total == 25
-    assert result.next_step == "archive_opportunity"
+    assert result.next_step == "needs_founder_review"
 
 
 def test_profile_excluded_terms_are_disqualifying() -> None:

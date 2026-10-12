@@ -816,3 +816,32 @@ button:disabled {
     width: 100%;
   }
 }
+
+
+:root { --bg:#f3f4f4; --panel:#fff; --panel-strong:#f7f7f6; --line:#d9dddc; --text:#202422; --muted:#69716d; --green:#26816a; --amber:#e56e42; --red:#c84d43; --blue:#356d79; --violet:#d96c45; --violet-dark:#b95031; --shadow:none; }
+body { background:var(--bg); }
+.ops-shell { max-width:1480px; padding:22px 28px; }
+.hero-band { min-height:112px; grid-template-columns:1fr auto; gap:24px; }
+h1 { font-size:2rem; line-height:1.1; text-transform:none; }
+.eyebrow { margin-bottom:8px; color:var(--text); }
+.mission-copy,.simple-steps,.discovery-header p,.pipeline { display:none; }
+.status-stack { grid-template-columns:repeat(3,minmax(150px,1fr)); gap:8px; }
+.status-tile { min-height:48px; padding:10px 12px; border-radius:4px; }
+.station-panel,.selected-discovery,.discovery-search,input,textarea,.report-row,.discovery-row,.terminal-line { border-radius:4px; box-shadow:none; }
+.discovery-command { background:#fff; border-color:var(--line); }
+.discover-button,.apply-button { min-height:44px; border-radius:4px; text-transform:none; }
+.discover-button { background:var(--text); border-color:var(--text); }
+.apply-button { background:var(--amber); border-color:var(--amber); color:#fff; }
+.score-orbit { min-height:128px; }
+.score-orbit div { width:112px; height:112px; background:#fff; }
+.score-orbit strong { font-size:2.8rem; }
+.report-list { max-height:420px; }
+.draft-panel pre { min-height:420px; }
+.meter-row div { border-radius:2px; background:#ecefed; }
+.meter-row i { background:var(--amber); }
+.profile-guidance { margin-top:16px; padding:14px; border-left:3px solid var(--amber); background:#f7f7f6; }
+.profile-guidance h3 { margin:0 0 8px; font-size:.9rem; }
+.profile-guidance p,.profile-guidance li { color:var(--muted); font-size:.88rem; line-height:1.5; }
+.profile-guidance ul { margin:8px 0 0; padding-left:20px; }
+@media(max-width:900px){.status-stack{grid-template-columns:1fr}.hero-band{min-height:0;padding:10px 0 16px}}
+@media(max-width:680px){.ops-shell{padding:14px}.intel-grid{grid-template-columns:1fr}.status-stack{display:none}}

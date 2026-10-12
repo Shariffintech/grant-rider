@@ -122,3 +122,40 @@ minimum_score_to_draft: 80
 
     assert response.status_code == 200
     assert response.json()["grant"]["title"] == "Education Innovation Grant"
+
+
+def test_explicit_start_creates_draft_when_fit_score_is_low(tmp_path: Path, monkeypatch) -> None:
+    profile_path = tmp_path / "profile.yaml"
+    profile_path.write_text("""
+name: Abena DMS
+founder_name: Shariff Tarver
+industry: Childcare compliance software
+entity_type: for-profit
+focus_areas: [childcare compliance]
+business_stage: early
+eligible_locations: [New Jersey, Pennsylvania]
+target_customers: [childcare centers]
+funding_needs: [product development]
+minimum_score_to_draft: 80
+""".strip(), encoding="utf-8")
+    monkeypatch.setattr("grant_application_agent.api.DEFAULT_PROFILE_PATH", profile_path)
+    monkeypatch.setattr("grant_application_agent.api.OUTPUT_DIR", tmp_path / "outputs")
+
+    response = TestClient(app).post(
+        "/run",
+        json={
+            "url": "https://example.com/research-grant",
+            "pageText": "Research Grant\nEligibility: nonprofit organizations\nDeadline: December 31, 2027",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["score"]["total"] < 80
+    assert payload["draft_path"]
+    assert payload["grant"]["status"] == "needs_review"
+    draft = TestClient(app).post("/draft", json={"draftPath": payload["draft_path"]})
+    assert draft.status_code == 200
+    assert "NEEDS FOUNDER INPUT" in draft.json()["content"]
+    reports = TestClient(app).get("/reports").json()
+    assert reports[0]["report_path"] == payload["report_path"]

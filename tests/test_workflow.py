@@ -76,7 +76,8 @@ def test_workflow_writes_report_when_grant_page_cannot_be_fetched(
 
     result = run_url("https://example.com/grant", profile_path, tmp_path / "outputs")
 
-    assert result.draft_path is None
+    assert result.draft_path is not None
+    assert Path(result.draft_path).exists()
     assert Path(result.report_path).exists()
-    assert result.grant.status == "archived"
+    assert result.grant.status == "needs_review"
     assert "could not be fetched" in result.grant.extraction_notes[0]

@@ -54,17 +54,17 @@ def run_grant(grant: GrantDetails, profile_path: Path, output_dir: Path) -> Work
     drafts = output_dir / "drafts"
     reports.mkdir(parents=True, exist_ok=True)
 
-    draft_path = None
-    if score.next_step == "draft_application":
-        drafts.mkdir(parents=True, exist_ok=True)
-        path = drafts / f"{slug}.md"
-        path.write_text(generate_draft(profile, grant, score), encoding="utf-8")
-        draft_path = str(path)
-        grant.status = GrantStatus.DRAFT_CREATED
-    elif score.next_step == "needs_founder_review":
-        grant.status = GrantStatus.NEEDS_REVIEW
-    else:
-        grant.status = GrantStatus.ARCHIVED
+    # run_url is only invoked after a founder explicitly starts a draft.
+    # Fit warnings remain visible, but incomplete extraction never discards the requested draft.
+    drafts.mkdir(parents=True, exist_ok=True)
+    path = drafts / f"{slug}.md"
+    path.write_text(generate_draft(profile, grant, score), encoding="utf-8")
+    draft_path = str(path)
+    grant.status = (
+        GrantStatus.DRAFT_CREATED
+        if score.next_step == "draft_application"
+        else GrantStatus.NEEDS_REVIEW
+    )
 
     report_path = reports / f"{slug}.json"
     result = WorkflowResult(
